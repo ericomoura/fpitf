@@ -71,52 +71,22 @@ def main():
     out = color_transfer.color_transfer(bgImage, obj)
     out = cv2.cvtColor(out, cv2.COLOR_RGB2RGBA)
     out[:,:,3] = obj[:,:,3]
-    out = mergeImages(bgImage, out)
+    out = mergeImages(bgImage, out, 1)
     cv2.imshow('Color transfer and merge', out)
-    out = cv2.cvtColor(out, cv2.COLOR_BGR2YCR_CB)
-    y, cb, cr = cv2.split(out)
-    y = cv2.equalizeHist(y)
-    out = cv2.merge((y,cb,cr))
-    out = cv2.cvtColor(out, cv2.COLOR_YCR_CB2BGR)
-    cv2.imshow("Color transfer and merge equalized", out)
+    debevec = cv2.createMergeDebevec()
+    merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
 
-    out2 = mergeImages(bgImage, obj, 0.5)
-    cv2.imshow('Merge', out2)
-    out2 = cv2.cvtColor(out2, cv2.COLOR_BGR2YCR_CB)
-    y, cb, cr = cv2.split(out2)
-    y = cv2.equalizeHist(y)
-    out2 = cv2.merge((y,cb,cr))
-    out2 = cv2.cvtColor(out2, cv2.COLOR_YCR_CB2BGR)
-    cv2.imshow("Merge equalized", out2)
+    tonemapper = cv2.createTonemapDrago(0.55, 0.5, 0.9)  # Gamma, saturation, bias
+    tonemapped = tonemapper.process(merged)
+    cv2.imshow("Color transfer and merge and mapped drago", tonemapped)
 
-    objMatched = hist_match(obj, bgImage)
-    # cv2.imshow("Histogram matching", objMatched)
+    tonemapper = cv2.createTonemapReinhard(0.5, 1, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
+    tonemapped = tonemapper.process(merged)
+    cv2.imshow("Color transfer and merge and mapped reinhard", tonemapped)
 
-    objMatched = cv2.cvtColor(objMatched, cv2.COLOR_RGB2RGBA)
-    objMatched[:,:,3] = obj[:,:,3]
-    objMatched = mergeImages(bgImage, objMatched)
-    cv2.imshow("Histogram matching and merge", objMatched)
-    objMatched = cv2.cvtColor(objMatched, cv2.COLOR_BGR2YCR_CB)
-    y, cb, cr = cv2.split(objMatched)
-    y = cv2.equalizeHist(y)
-    objMatched = cv2.merge((y,cb,cr))
-    objMatched = cv2.cvtColor(objMatched, cv2.COLOR_YCR_CB2BGR)
-    cv2.imshow("Histogram matching and merge equalized", objMatched)
-
-    skimageMatched = obj[:,:,0:3]
-    skimageMatched = skitra.match_histograms(skimageMatched, bgImage, multichannel=True)
-    # cv2.imshow("Skimage matching", skimageMatched)
-
-    skimageMatched = cv2.cvtColor(skimageMatched, cv2.COLOR_RGB2RGBA)
-    skimageMatched[:,:,3] = obj[:,:,3]
-    skimageMatched = mergeImages(bgImage, skimageMatched, 0.75)
-    cv2.imshow("Skimage matching and merge", skimageMatched)
-    skimageMatched = cv2.cvtColor(skimageMatched, cv2.COLOR_BGR2YCR_CB)
-    y, cb, cr = cv2.split(skimageMatched)
-    y = cv2.equalizeHist(y)
-    skimageMatched = cv2.merge((y,cb,cr))
-    skimageMatched = cv2.cvtColor(skimageMatched, cv2.COLOR_YCR_CB2BGR)
-    cv2.imshow("Skimage matching and merge equalized", skimageMatched)
+    tonemapper = cv2.createTonemapMantiuk(1.5, 1, 1.2)  #Gamma, scale, saturation
+    tonemapped = tonemapper.process(merged)
+    cv2.imshow("Color transfer and merge and mapped matiuk", tonemapped)
 
 
 
