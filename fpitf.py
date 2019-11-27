@@ -15,7 +15,6 @@ def find_nearest_above(my_array, target):
         return c # returns min index of the nearest if target is greater than any value
     masked_diff = np.ma.masked_array(diff, mask)
     return masked_diff.argmin()
-
 def hist_match(original, specified):
  
     oldshape = original.shape
@@ -66,34 +65,58 @@ def mergeImages(bg, obj, objAlpha=0.5):
 def main():
     bgImage = cv2.imread('./images/cliff1.jpg', cv2.IMREAD_COLOR)
     obj = cv2.imread('./images/obj1.png', cv2.IMREAD_UNCHANGED)
-    cv2.imshow('Background', bgImage)
-    cv2.imshow('Object', obj)
+    # cv2.imshow('Background', bgImage)
+    # cv2.imshow('Object', obj)
 
     out = color_transfer.color_transfer(bgImage, obj)
     out = cv2.cvtColor(out, cv2.COLOR_RGB2RGBA)
     out[:,:,3] = obj[:,:,3]
     out = mergeImages(bgImage, out)
     cv2.imshow('Color transfer and merge', out)
+    out = cv2.cvtColor(out, cv2.COLOR_BGR2YCR_CB)
+    y, cb, cr = cv2.split(out)
+    y = cv2.equalizeHist(y)
+    out = cv2.merge((y,cb,cr))
+    out = cv2.cvtColor(out, cv2.COLOR_YCR_CB2BGR)
+    cv2.imshow("Color transfer and merge equalized", out)
 
     out2 = mergeImages(bgImage, obj, 0.5)
     cv2.imshow('Merge', out2)
+    out2 = cv2.cvtColor(out2, cv2.COLOR_BGR2YCR_CB)
+    y, cb, cr = cv2.split(out2)
+    y = cv2.equalizeHist(y)
+    out2 = cv2.merge((y,cb,cr))
+    out2 = cv2.cvtColor(out2, cv2.COLOR_YCR_CB2BGR)
+    cv2.imshow("Merge equalized", out2)
 
     objMatched = hist_match(obj, bgImage)
-    cv2.imshow("Histogram matching", objMatched)
+    # cv2.imshow("Histogram matching", objMatched)
 
     objMatched = cv2.cvtColor(objMatched, cv2.COLOR_RGB2RGBA)
     objMatched[:,:,3] = obj[:,:,3]
     objMatched = mergeImages(bgImage, objMatched)
     cv2.imshow("Histogram matching and merge", objMatched)
+    objMatched = cv2.cvtColor(objMatched, cv2.COLOR_BGR2YCR_CB)
+    y, cb, cr = cv2.split(objMatched)
+    y = cv2.equalizeHist(y)
+    objMatched = cv2.merge((y,cb,cr))
+    objMatched = cv2.cvtColor(objMatched, cv2.COLOR_YCR_CB2BGR)
+    cv2.imshow("Histogram matching and merge equalized", objMatched)
 
     skimageMatched = obj[:,:,0:3]
     skimageMatched = skitra.match_histograms(skimageMatched, bgImage, multichannel=True)
-    cv2.imshow("Skimage matching", skimageMatched)
+    # cv2.imshow("Skimage matching", skimageMatched)
 
     skimageMatched = cv2.cvtColor(skimageMatched, cv2.COLOR_RGB2RGBA)
     skimageMatched[:,:,3] = obj[:,:,3]
     skimageMatched = mergeImages(bgImage, skimageMatched, 0.75)
     cv2.imshow("Skimage matching and merge", skimageMatched)
+    skimageMatched = cv2.cvtColor(skimageMatched, cv2.COLOR_BGR2YCR_CB)
+    y, cb, cr = cv2.split(skimageMatched)
+    y = cv2.equalizeHist(y)
+    skimageMatched = cv2.merge((y,cb,cr))
+    skimageMatched = cv2.cvtColor(skimageMatched, cv2.COLOR_YCR_CB2BGR)
+    cv2.imshow("Skimage matching and merge equalized", skimageMatched)
 
 
 
