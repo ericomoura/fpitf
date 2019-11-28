@@ -76,17 +76,31 @@ def main():
     debevec = cv2.createMergeDebevec()
     merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
 
-    tonemapper = cv2.createTonemapDrago(0.55, 0.5, 0.9)  # Gamma, saturation, bias
-    tonemapped = tonemapper.process(merged)
-    cv2.imshow("Color transfer and merge and mapped drago", tonemapped)
-
     tonemapper = cv2.createTonemapReinhard(0.5, 1, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
     tonemapped = tonemapper.process(merged)
     cv2.imshow("Color transfer and merge and mapped reinhard", tonemapped)
 
-    tonemapper = cv2.createTonemapMantiuk(1.5, 1, 1.2)  #Gamma, scale, saturation
+    ######
+
+    objGray = cv2.cvtColor(obj, cv2.COLOR_BGR2GRAY)
+    out = np.ones((338, 600, 4), np.uint8)
+    out[:,:,0] = objGray[:,:]
+    out[:,:,1] = objGray[:,:]
+    out[:,:,2] = objGray[:,:]
+    out[:,:,3] = obj[:,:,3]
+    objGray = out
+
+    out = color_transfer.color_transfer(bgImage, objGray)
+    out = cv2.cvtColor(out, cv2.COLOR_RGB2RGBA)
+    out[:,:,3] = obj[:,:,3]
+    out = mergeImages(bgImage, out, 1)
+    cv2.imshow('Gray color transfer and merge', out)
+    debevec = cv2.createMergeDebevec()
+    merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
+
+    tonemapper = cv2.createTonemapReinhard(0.5, 1, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
     tonemapped = tonemapper.process(merged)
-    cv2.imshow("Color transfer and merge and mapped matiuk", tonemapped)
+    cv2.imshow("Gray color transfer and merge and mapped reinhard", tonemapped)
 
 
 
