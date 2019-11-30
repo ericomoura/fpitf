@@ -39,16 +39,16 @@ def quantize(image, shades):
     return newImage
 
 def main():
-    scene = "./images/scene1"
-    bgImage = cv2.imread(scene+"/bg.png", cv2.IMREAD_COLOR)
-    obj = cv2.imread(scene+"/obj1.png", cv2.IMREAD_UNCHANGED)
+    scene = "./images/scene1/"
+    bgImage = cv2.imread(scene+"bg.png", cv2.IMREAD_COLOR)
+    obj = cv2.imread(scene+"obj1.png", cv2.IMREAD_UNCHANGED)
     objQuant = quantize(obj[:,:,0:3], 4)
     objQuant = cv2.cvtColor(objQuant, cv2.COLOR_RGB2RGBA)
     objQuant[:,:,3] = obj[:,:,3]
 
     out = mergeImages(bgImage, objQuant, 0.75)
 
-    obj = cv2.imread(scene+"/obj2.png", cv2.IMREAD_UNCHANGED)
+    obj = cv2.imread(scene+"obj2.png", cv2.IMREAD_UNCHANGED)
     objQuant = quantize(obj[:,:,0:3], 4)
     objQuant = cv2.cvtColor(objQuant, cv2.COLOR_RGB2RGBA)
     objQuant[:,:,3] = obj[:,:,3]
@@ -56,12 +56,16 @@ def main():
     out = mergeImages(out, objQuant, 0.75)
 
     cv2.imshow('Merge quantized', out)
+    cv2.imwrite(scene+'scene1answer.png', out)
     debevec = cv2.createMergeDebevec()
     merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
 
     tonemapper = cv2.createTonemapReinhard(0.5, 0, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
     tonemapped = tonemapper.process(merged)
     cv2.imshow("Merge and mapped reinhard quantized", tonemapped)
+    out = cv2.convertScaleAbs(tonemapped, alpha=(255.0))
+    out = out.astype('uint8')
+    cv2.imwrite(scene+'scene1.png', out)
 
 
 
