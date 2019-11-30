@@ -61,47 +61,51 @@ def mergeImages(bg, obj, objAlpha=0.5):
 
     return result
 
+#Applies a quantization technique reducing the number of shades to the specified number
+def quantize(image, shades):
+    height, width, channels = image.shape
+    newImage = image.copy()
+
+    if(shades < 1): #Can't have less than 1 shade, returns a black image
+        newImage = np.zeros([height, width, channels])
+    else:
+        for h in range(height):
+            for w in range(width):
+                b, g, r = image[h][w]
+                newB = round(b/(255/shades)) * (255/shades)
+                newG = round(g/(255/shades)) * (255/shades)
+                newR = round(r/(255/shades)) * (255/shades)
+                newImage[h][w] = [newB, newG, newR]
+
+    return newImage
 
 def main():
     bgImage = cv2.imread('./images/cliff1.jpg', cv2.IMREAD_COLOR)
     obj = cv2.imread('./images/obj1.png', cv2.IMREAD_UNCHANGED)
-    # cv2.imshow('Background', bgImage)
-    # cv2.imshow('Object', obj)
 
-    out = color_transfer.color_transfer(bgImage, obj)
-    out = cv2.cvtColor(out, cv2.COLOR_RGB2RGBA)
-    out[:,:,3] = obj[:,:,3]
-    out = mergeImages(bgImage, out, 1)
-    cv2.imshow('Color transfer and merge', out)
+    out = mergeImages(bgImage, obj, 0.75)
+    cv2.imshow('Merge', out)
     debevec = cv2.createMergeDebevec()
     merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
 
-    tonemapper = cv2.createTonemapReinhard(0.5, 1, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
+    tonemapper = cv2.createTonemapReinhard(0.5, 0, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
     tonemapped = tonemapper.process(merged)
-    cv2.imshow("Color transfer and merge and mapped reinhard", tonemapped)
+    cv2.imshow("Merge and mapped reinhard", tonemapped)
 
-    ######
+    #####
 
-    objGray = cv2.cvtColor(obj, cv2.COLOR_BGR2GRAY)
-    out = np.ones((338, 600, 4), np.uint8)
-    out[:,:,0] = objGray[:,:]
-    out[:,:,1] = objGray[:,:]
-    out[:,:,2] = objGray[:,:]
-    out[:,:,3] = obj[:,:,3]
-    objGray = out
+    objQuant = quantize(obj[:,:,0:3], 4)
+    objQuant = cv2.cvtColor(objQuant, cv2.COLOR_RGB2RGBA)
+    objQuant[:,:,3] = obj[:,:,3]
 
-    out = color_transfer.color_transfer(bgImage, objGray)
-    out = cv2.cvtColor(out, cv2.COLOR_RGB2RGBA)
-    out[:,:,3] = obj[:,:,3]
-    out = mergeImages(bgImage, out, 1)
-    cv2.imshow('Gray color transfer and merge', out)
+    out = mergeImages(bgImage, objQuant, 0.75)
+    cv2.imshow('Merge quantized', out)
     debevec = cv2.createMergeDebevec()
     merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
 
-    tonemapper = cv2.createTonemapReinhard(0.5, 1, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
+    tonemapper = cv2.createTonemapReinhard(0.5, 0, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
     tonemapped = tonemapper.process(merged)
-    cv2.imshow("Gray color transfer and merge and mapped reinhard", tonemapped)
-
+    cv2.imshow("Merge and mapped reinhard quantized", tonemapped)
 
 
 
