@@ -4,47 +4,6 @@ import numpy as np
 import skimage.exposure as skitra
 
 
-
-def find_nearest_above(my_array, target):
-    diff = my_array - target
-    mask = np.ma.less_equal(diff, -1)
-    # We need to mask the negative differences
-    # since we are looking for values above
-    if np.all(mask):
-        c = np.abs(diff).argmin()
-        return c # returns min index of the nearest if target is greater than any value
-    masked_diff = np.ma.masked_array(diff, mask)
-    return masked_diff.argmin()
-def hist_match(original, specified):
- 
-    oldshape = original.shape
-    original = original.ravel()
-    specified = specified.ravel()
- 
-    # get the set of unique pixel values and their corresponding indices and counts
-    s_values, bin_idx, s_counts = np.unique(original, return_inverse=True,return_counts=True)
-    t_values, t_counts = np.unique(specified, return_counts=True)
- 
-    # Calculate s_k for original image
-    s_quantiles = np.cumsum(s_counts).astype(np.float64)
-    s_quantiles /= s_quantiles[-1]
-    
-    # Calculate s_k for specified image
-    t_quantiles = np.cumsum(t_counts).astype(np.float64)
-    t_quantiles /= t_quantiles[-1]
- 
-    # Round the values
-    sour = np.around(s_quantiles*255)
-    temp = np.around(t_quantiles*255)
-    
-    # Map the rounded values
-    b=[]
-    for data in sour[:]:
-        b.append(find_nearest_above(temp,data))
-    b= np.array(b,dtype='uint8')
- 
-    return b[bin_idx].reshape(oldshape)
-
 # Merges two images ignoring transparent pixels
 def mergeImages(bg, obj, objAlpha=0.5):
     width, height, channels = obj.shape
@@ -80,25 +39,22 @@ def quantize(image, shades):
     return newImage
 
 def main():
-    bgImage = cv2.imread('./images/cliff1.jpg', cv2.IMREAD_COLOR)
-    obj = cv2.imread('./images/obj1.png', cv2.IMREAD_UNCHANGED)
-
-    out = mergeImages(bgImage, obj, 0.75)
-    cv2.imshow('Merge', out)
-    debevec = cv2.createMergeDebevec()
-    merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
-
-    tonemapper = cv2.createTonemapReinhard(0.5, 0, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
-    tonemapped = tonemapper.process(merged)
-    cv2.imshow("Merge and mapped reinhard", tonemapped)
-
-    #####
-
+    scene = "./images/scene1"
+    bgImage = cv2.imread(scene+"/bg.png", cv2.IMREAD_COLOR)
+    obj = cv2.imread(scene+"/obj1.png", cv2.IMREAD_UNCHANGED)
     objQuant = quantize(obj[:,:,0:3], 4)
     objQuant = cv2.cvtColor(objQuant, cv2.COLOR_RGB2RGBA)
     objQuant[:,:,3] = obj[:,:,3]
 
     out = mergeImages(bgImage, objQuant, 0.75)
+
+    obj = cv2.imread(scene+"/obj2.png", cv2.IMREAD_UNCHANGED)
+    objQuant = quantize(obj[:,:,0:3], 4)
+    objQuant = cv2.cvtColor(objQuant, cv2.COLOR_RGB2RGBA)
+    objQuant[:,:,3] = obj[:,:,3]
+
+    out = mergeImages(out, objQuant, 0.75)
+
     cv2.imshow('Merge quantized', out)
     debevec = cv2.createMergeDebevec()
     merged = debevec.process([bgImage, out], np.array([0.15, 0.15], dtype=np.float32))
@@ -106,7 +62,6 @@ def main():
     tonemapper = cv2.createTonemapReinhard(0.5, 0, 0, 0)  #Gamma, intensity, light_adapt, color_adapt
     tonemapped = tonemapper.process(merged)
     cv2.imshow("Merge and mapped reinhard quantized", tonemapped)
-
 
 
 
